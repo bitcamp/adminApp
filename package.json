@@ -20,6 +20,6 @@
   "dependencies": {
     "react": "16.2.0",
     "react-native": "0.52.0",
-    "react-native-camera": "git+https://git@github.com/react-native-community/react-native-camera"
+    "react-native-camera": "^0.6.0"
   }
 }

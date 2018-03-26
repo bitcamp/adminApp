@@ -1,58 +1,53 @@
-import React, { Component } from 'react';
+import React, {Component} from 'react';
 import {
-    AppRegistry,
-    Dimensions,
-    StyleSheet,
-    Text,
-    TouchableHighlight,
-    View
+  Text,
+  View,
+  StyleSheet
 } from 'react-native';
 
 import Camera from 'react-native-camera';
+
 class App extends Component {
-  componentDidMount(){
-          console.log("HERE");
-  }
-    scanBarcode(data) {
-        console.log("xxxx");
+
+    constructor(props) {
+        super(props);
+        this.state = {
+            qrcode: ''
+        }
     }
-    render() {
+
+    onBarCodeRead = (e) => this.setState({qrcode: e.data});
+
+    render () {
         return (
-
-        <Camera
-          ref={(cam) => {
-            this.camera = cam;
-          }}
-          style={styles.preview}
-          aspect={Camera.constants.Aspect.fill}
-          onBarCodeRead={this.scanBarcode.bind(this)}
-          barCodeTypes={[Camera.constants.BarCodeType.qr]}>
-        </Camera>
-
-
-        );
+            <View  style={styles.container}>
+                <Camera
+                    style={styles.preview}
+                    onBarCodeRead={this.onBarCodeRead}
+                    ref={cam => this.camera = cam}
+                    aspect={Camera.constants.Aspect.fill}
+                    >
+                        <Text style={{
+                            backgroundColor: 'white'
+                        }}>{this.state.qrcode}</Text>
+                    </Camera>
+            </View>
+        )
     }
+
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1
-    },
-    preview: {
-        flex: 1,
-        justifyContent: 'flex-end',
-        alignItems: 'center',
-        height: Dimensions.get('window').height,
-        width: Dimensions.get('window').width
-    },
-    capture: {
-        flex: 0,
-        backgroundColor: '#fff',
-        borderRadius: 5,
-        color: '#000',
-        padding: 10,
-        margin: 40
-    }
+  container: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  preview: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    alignItems: 'center'
+  }
 });
+
 
 export default App;

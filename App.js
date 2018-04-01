@@ -15,6 +15,7 @@ class App extends Component {
   }
     scanBarcode(data) {
         console.log("xxxx");
+        console.log(data);
     }
     render() {
         return (
@@ -25,7 +26,7 @@ class App extends Component {
           }}
           style={styles.preview}
           aspect={Camera.constants.Aspect.fill}
-          onBarCodeRead={this.scanBarcode.bind(this)}
+          onBarCodeRead={(e) => this.scanBarcode(e)}
           barCodeTypes={[Camera.constants.BarCodeType.qr]}>
         </Camera>
 
@@ -56,3 +57,4 @@ const styles = StyleSheet.create({
 });
 
 export default App;
+

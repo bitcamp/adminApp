@@ -20,7 +20,7 @@ class App extends Component {
   }
 
   _onPress() {
-    this.setState({ buttonVisible: false});
+    this.setState({buttonVisible: false});
   }
 
     scanBarcode(data) {
@@ -31,15 +31,13 @@ class App extends Component {
 
   render() {
     var button = null;
-      if (this.props.buttonVisible) {
+      if (this.state.buttonVisible) {
         button = (<DataView 
                     onPress={this._onPress} 
                     data={this.state.data}
                     title="Info" />);
       }
     return (
-      <View>
-        {button}
         <Camera
           ref={(cam) => {
             this.camera = cam;
@@ -48,19 +46,25 @@ class App extends Component {
           aspect={Camera.constants.Aspect.fill}
           onBarCodeRead={(e) => this.scanBarcode(e)}
           barCodeTypes={[Camera.constants.BarCodeType.qr]}>
+          {button}
         </Camera>
-      </View>
     );
   }
 }
 
 class DataView extends Component {
+  getDefaultProps() {
+    return {
+      title: "Info",
+      data: null,
+    }
+  }
   render() {
     return (
       <View style={styles.cancelButton}>
         <TouchableOpacity onPress={this.props.onPress}>
           <Text style={styles.cancelButtonText}>{this.props.title}</Text>
-          <Text style={styles.cancelButtonText}>{this.props.data}</Text>
+          <Text style={styles.cancelButtonText}>{this.props.data.data}</Text>
         </TouchableOpacity>
       </View>
     );

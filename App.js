@@ -5,21 +5,42 @@ import {
     StyleSheet,
     Text,
     TouchableHighlight,
+    TouchableOpacity,
     View
 } from 'react-native';
 
 import Camera from 'react-native-camera';
 class App extends Component {
-  componentDidMount(){
-          console.log("HERE");
+  constructor(props) {
+    super(props);
+    this.state = {
+      buttonVisible: false,
+      data: null,
+    }
   }
+
+  _onPress() {
+    this.setState({ buttonVisible: false});
+  }
+
     scanBarcode(data) {
-        console.log("xxxx");
         console.log(data);
+        this.setState({ buttonVisible: true,
+                        data: data});
     }
     render() {
+    var button = null;
+    
+    if (this.props.buttonVisible) {
+      button = (<DataView 
+                    onPress={this._onPress} 
+                    data={this.state.data}
+                    title="Info" />);
+    }
         return (
 
+      <View>
+        {button}
         <Camera
           ref={(cam) => {
             this.camera = cam;
@@ -29,10 +50,24 @@ class App extends Component {
           onBarCodeRead={(e) => this.scanBarcode(e)}
           barCodeTypes={[Camera.constants.BarCodeType.qr]}>
         </Camera>
+      </View>
 
 
         );
     }
+}
+
+class DataView extends Component {
+  render() {
+    return (
+      <View style={styles.cancelButton}>
+        <TouchableOpacity onPress={this.props.onPress}>
+          <Text style={styles.cancelButtonText}>{this.props.title}</Text>
+          <Text style={styles.cancelButtonText}>{this.props.data}</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 }
 
 const styles = StyleSheet.create({
@@ -53,7 +88,38 @@ const styles = StyleSheet.create({
         color: '#000',
         padding: 10,
         margin: 40
-    }
+    },
+    camera: {
+      height: 568,
+      alignItems: 'center',
+    },
+    rectangleContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'transparent',
+    },
+    rectangle: {
+      height: 250,
+      width: 250,
+      borderWidth: 2,
+      borderColor: '#00FF00',
+      backgroundColor: 'transparent',
+    },
+    cancelButton: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      backgroundColor: 'white',
+      borderRadius: 3,
+      padding: 15,
+      width: 100,
+      bottom: 10,
+    },
+    cancelButtonText: {
+      fontSize: 17,
+      fontWeight: '500',
+      color: '#0097CE',
+    },
 });
 
 export default App;

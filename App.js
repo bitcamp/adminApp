@@ -28,17 +28,16 @@ class App extends Component {
         this.setState({ buttonVisible: true,
                         data: data});
     }
-    render() {
+
+  render() {
     var button = null;
-    
-    if (this.props.buttonVisible) {
-      button = (<DataView 
+      if (this.props.buttonVisible) {
+        button = (<DataView 
                     onPress={this._onPress} 
                     data={this.state.data}
                     title="Info" />);
-    }
-        return (
-
+      }
+    return (
       <View>
         {button}
         <Camera
@@ -51,10 +50,8 @@ class App extends Component {
           barCodeTypes={[Camera.constants.BarCodeType.qr]}>
         </Camera>
       </View>
-
-
-        );
-    }
+    );
+  }
 }
 
 class DataView extends Component {

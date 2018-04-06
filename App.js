@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import {
+  Alert,
   Platform,
+  AsyncStorage,
   AppRegistry,
   Dimensions,
   StyleSheet,
@@ -15,15 +17,10 @@ import Modal from 'react-native-modal';
 import Camera from 'react-native-camera';
 import { colors } from './shared/styles';
 import aleofy from './shared/aleo';
-
+const TOKEN = '@bitcampapp:token';
 const AleoText = aleofy(Text);
 const BoldAleoText = aleofy(Text, 'Bold');
 const styles = StyleSheet.create({
-   container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center"
-  },
   headerTitle: {
     color:'#FFF',
     width: 300,
@@ -46,25 +43,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
   },
-  modalContent: {
-    backgroundColor: "white",
-    padding: 22,
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 4,
-    borderColor: "rgba(0, 0, 0, 0.1)"
-  },
-  bottomModal: {
-    justifyContent: "flex-end",
-    margin: 0
-  },
-  qr: {
-    marginBottom: 80,
-    marginTop: 40,
-  },
-  container: {
-      flex: 1
-  },
   preview: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -72,14 +50,6 @@ const styles = StyleSheet.create({
     height: Dimensions.get('window').height,
     width: Dimensions.get('window').width
   },
-  capture: {
-    flex: 0,
-    backgroundColor: '#fff',
-    borderRadius: 5,
-    color: '#000',
-    padding: 10,
-    margin: 40
-  }
 });
 
 
@@ -88,9 +58,99 @@ class App extends Component {
     super(props);
     this.state = {
       data: null,
-      isVisible: false
+      isVisible: false,
+      token: ""
     }
   }
+
+  componentDidMount() {
+    this.getToken();
+  }
+
+  async getToken(){
+      console.log("in get token");
+      let token = await AsyncStorage.getItem(TOKEN);
+      token = null;
+      console.log("got token");
+      console.log(JSON.stringify(token));
+      if(token == null){
+        try {
+        let response = await fetch('http://35.174.30.108:3000/auth/login', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: "",
+            password: "",
+          }),
+        });
+        let responseJson = await response.json();
+        console.log(responseJson);
+        let status = unescape(response['ok']);
+        if (status === "true") {
+          let retrievedToken = unescape(responseJson['token']);
+          console.log(retrievedToken);
+          this.setState({token: retrievedToken});
+          AsyncStorage.setItem(TOKEN, this.state.token, function(error){
+            if (error){
+              console.log("Error: " + error);
+            }
+          });
+        }else {
+        Alert.alert(
+          "Incorrect credentials.",
+          "Try again.",
+          [
+            {text: 'OK', onPress: () => console.log('OK Pressed')},
+          ],
+          { cancelable: false }
+        );
+      }
+    } catch (error) {
+      Alert.alert(
+          "Cound not connect.",
+          "Try again.",
+          [
+            {text: 'OK', onPress: () => console.log('OK Pressed')},
+          ],
+          { cancelable: false }
+        );
+      }
+    }else{
+      this.setState({token: token});
+    }
+}
+
+async getData(id){
+  console.log("inside get data");
+  console.log(this.state.token);
+  let url = "http://35.174.30.108:3000/api/users/" + id + "/checkin";
+  console.log(url);
+  try {
+        let response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'x-access-token': this.state.token,
+          },
+        });
+        let responseJson = await response.json();
+        console.log(responseJson);
+        this.setState({data: JSON.stringify(responseJson)});
+    } catch (error) {
+      Alert.alert(
+          "Cound not connect.",
+          "Try again.",
+          [
+            {text: 'OK', onPress: () => console.log('OK Pressed')},
+          ],
+          { cancelable: false }
+        );
+      }
+}
 
   _closeModal = () => {
     this.setState({ isVisible: false, data: null });
@@ -138,8 +198,9 @@ class App extends Component {
   );
 
   scanBarcode(data) {
-      console.log(data);
-      this.setState({ data: data, isVisible: true });
+    console.log(data);
+    this.setState({ isVisible: true });
+    this.getData(data.data);
   }
 
   renderCamera() {

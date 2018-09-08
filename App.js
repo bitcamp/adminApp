@@ -50,6 +50,9 @@ const styles = StyleSheet.create({
     height: Dimensions.get('window').height,
     width: Dimensions.get('window').width
   },
+  row: {
+    flexDirection: 'row',
+  },
 });
 
 
@@ -59,7 +62,9 @@ class App extends Component {
     this.state = {
       data: null,
       isVisible: false,
-      token: ""
+      token: "",
+      scanning: true,
+      id: ""
     }
   }
 
@@ -67,31 +72,130 @@ class App extends Component {
     this.getToken();
   }
 
+ async checkIn(id){
+    let url = "https://apply.bit.camp/api/users/" + id + "/checkin";
+    try {
+        let response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'x-access-token': this.state.token,
+          },
+        });
+    } catch (error) {
+      Alert.alert(
+          "Cound not connect.",
+          "Try again.",
+          [
+            {text: 'OK', onPress: () => console.log('OK Pressed')},
+          ],
+          { cancelable: false }
+        );
+      }
+  }
+
+  parseData(){
+    try{
+    if(this.state.data != null){
+      console.log(this.state.data);
+      let json = JSON.parse(this.state.data);
+      let admitted = json['status']['admitted'];
+      if(admitted){
+        this.checkIn(this.state.id);
+        let name = json['profile']['firstName'] + " " + json['profile']['lastName'];
+        let dietaryRestrictions = json['profile']['dietaryRestrictions'];
+
+          admitted = (
+
+            <View>
+            <View style={styles.row}>
+            <AleoText
+            style={{
+              fontSize: 30,
+              paddingLeft: 5,
+              marginBottom: 20,
+              color: "#808080",
+            }}>Admitted:</AleoText>
+            <Text style={{color: "green", fontSize: 30}}> YES </Text>
+            </View>
+            <View style={styles.row}>
+            <AleoText
+            style={{
+              fontSize: 25,
+              paddingLeft: 5,
+              marginBottom: 20,
+              color: "#808080",
+            }}>Name:</AleoText>
+
+            <Text style={{flex: 1, fontSize: 25, flexWrap: 'wrap'}}> {name} </Text>
+            </View>
+            <View style={styles.row}>
+            <AleoText
+            style={{
+              fontSize: 18,
+              paddingLeft: 5,
+              marginBottom: 20,
+              color: "#808080",
+            }}>Dietary Restrictions:</AleoText>
+            <Text style={{flex: 1, fontSize: 18, flexWrap: 'wrap'}}> {dietaryRestrictions} </Text>
+            </View>
+          </View>);
+        }else{
+          admitted = (
+              <View>
+            <View style={styles.row}>
+            <AleoText
+            style={{
+              fontSize: 30,
+              paddingLeft: 5,
+              marginBottom: 20,
+              color: "#808080",
+            }}>Admitted:</AleoText>
+            <Text style={{color: "red", fontSize: 30}}> NO </Text>
+            </View>
+          </View>);
+        }
+        return admitted;
+    }else{
+      return (<Text> Internet Error </Text>);
+    }
+  }catch(error){
+    return (
+        <View>
+            <View style={styles.row}>
+            <AleoText
+            style={{
+              fontSize: 30,
+              paddingLeft: 5,
+              marginBottom: 20,
+              color: "#808080",
+            }}>Admitted:</AleoText>
+            <Text style={{color: "red", fontSize: 30}}> NO </Text>
+            </View>
+          </View>);
+  }
+  }
+
   async getToken(){
-      console.log("in get token");
       let token = await AsyncStorage.getItem(TOKEN);
-      token = null;
-      console.log("got token");
-      console.log(JSON.stringify(token));
       if(token == null){
         try {
-        let response = await fetch('http://35.174.30.108:3000/auth/login', {
+        let response = await fetch('https://apply.bit.camp/auth/login', {
           method: 'POST',
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            email: "",
-            password: "",
+            email: "hello@bit.camp",
+            password: "Bitcamper_18",
           }),
         });
         let responseJson = await response.json();
-        console.log(responseJson);
         let status = unescape(response['ok']);
         if (status === "true") {
           let retrievedToken = unescape(responseJson['token']);
-          console.log(retrievedToken);
           this.setState({token: retrievedToken});
           AsyncStorage.setItem(TOKEN, this.state.token, function(error){
             if (error){
@@ -109,6 +213,8 @@ class App extends Component {
         );
       }
     } catch (error) {
+      console.log("ERROR:");
+      console.log(error);
       Alert.alert(
           "Cound not connect.",
           "Try again.",
@@ -123,14 +229,11 @@ class App extends Component {
     }
 }
 
-async getData(id){
-  console.log("inside get data");
-  console.log(this.state.token);
-  let url = "http://35.174.30.108:3000/api/users/" + id + "/checkin";
-  console.log(url);
+async getData(){
+  let url = "https://apply.bit.camp/api/users/" + this.state.id;
   try {
         let response = await fetch(url, {
-          method: 'POST',
+          method: 'GET',
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
@@ -138,9 +241,10 @@ async getData(id){
           },
         });
         let responseJson = await response.json();
-        console.log(responseJson);
         this.setState({data: JSON.stringify(responseJson)});
+
     } catch (error) {
+      console.log("ERROR: " + error);
       Alert.alert(
           "Cound not connect.",
           "Try again.",
@@ -153,7 +257,7 @@ async getData(id){
 }
 
   _closeModal = () => {
-    this.setState({ isVisible: false, data: null });
+    this.setState({ isVisible: false, data: null, scanning: true, id: "" });
     this.forceUpdate();
   }
 
@@ -174,22 +278,14 @@ async getData(id){
     <View style={{padding: 20}}>
       <AleoText
           style={{
-            fontSize: 27,
+            fontSize: 35,
             paddingLeft: 5,
             marginBottom: 10,
             color: colors.midnightBlue,
           }}>
           Hacker Information
       </AleoText>
-      <AleoText
-          style={{
-            fontSize: 18,
-            paddingLeft: 5,
-            marginBottom: 20,
-            color: "#808080",
-          }}>
-        {this.state.data && this.state.data.data}
-      </AleoText>
+        {this.parseData()}
 	    <View style={{margin:7}}/>
 	    {
         this._renderButton("Close", styles.altBtn, () => this._closeModal())
@@ -198,46 +294,60 @@ async getData(id){
   );
 
   scanBarcode(data) {
-    console.log(data);
-    this.setState({ isVisible: true });
-    this.getData(data.data);
+    console.log("here");
+    this.setState({ isVisible: true, scanning: false, id: data.data});
+    this.getData();
   }
 
   renderCamera() {
-    return (
-      <Camera
+    let camera;
+    if(this.state.scanning == false){
+      camera = (<Camera
+        ref={(cam) => { this.camera = cam; }}
+        style={styles.preview}
+        aspect={Camera.constants.Aspect.fill}>
+      </Camera>);
+    }else{
+      camera = (<Camera
         ref={(cam) => { this.camera = cam; }}
         style={styles.preview}
         aspect={Camera.constants.Aspect.fill}
         onBarCodeRead={(e) => this.scanBarcode(e)}
         barCodeTypes={[Camera.constants.BarCodeType.qr]}>
-      </Camera>
-    );
+      </Camera>);
+    }
+    console.log("camera state: " + this.state.scanning);
+    return camera;
   }
 
   render() {
-    console.log(this.state.isVisible);
-    return (
-      <Container>
+    if(this.state.scanning){
+      return (<Container>
         { this.renderCamera() }
-        <Modal
-	        isVisible={this.state.isVisible}
-	        backdropColor={'white'}
-	        backdropOpacity={0.9}
-	        animationIn="slideInUp"
-	        animationOut="slideOutDown"
-	        animationInTiming={250}
-	        animationOutTiming={250}
-	        backdropTransitionInTiming={250}
-	        backdropTransitionOutTiming={250}
-	        avoidKeyboard={true}
-          onBackdropPress={() => this.setState({ isVisible: false})}
-          onBackButtonPress={() => this.setState({ isVisible: false})}
-        >
-          { this._renderModalContent() }
-        </Modal>
-      </Container>
-    );
+        </Container>);
+    }else{
+      return (
+        <Container>
+          { this.renderCamera() }
+          <Modal
+  	        isVisible={this.state.isVisible}
+  	        backdropColor={'white'}
+  	        backdropOpacity={0.9}
+  	        animationIn="slideInUp"
+  	        animationOut="slideOutDown"
+  	        animationInTiming={250}
+  	        animationOutTiming={250}
+  	        backdropTransitionInTiming={250}
+  	        backdropTransitionOutTiming={250}
+  	        avoidKeyboard={true}
+            onBackdropPress={() => this.setState({ isVisible: false})}
+            onBackButtonPress={() => this.setState({ isVisible: false})}
+          >
+            { this._renderModalContent() }
+          </Modal>
+        </Container>
+      );
+    }
   }
 }
 
